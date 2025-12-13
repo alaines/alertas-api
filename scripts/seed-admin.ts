@@ -13,7 +13,11 @@ async function main() {
   // Crear o actualizar usuario admin
   const admin = await prisma.user.upsert({
     where: { email: 'admin@alertas.com' },
-    update: {},
+    update: {
+      password: hashedPassword,
+      role: 'ADMIN',
+      isActive: true,
+    },
     create: {
       email: 'admin@alertas.com',
       username: 'admin',

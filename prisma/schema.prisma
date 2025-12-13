@@ -28,6 +28,8 @@ model WazeIncident {
   status         String   @default("active")
   created_at     DateTime @db.Timestamptz(6) @default(now())
   updated_at     DateTime @db.Timestamptz(6) @default(now())
+  
+  tickets        Ticket[]
 
   @@map("waze_incidents")
 }
@@ -44,13 +46,74 @@ model User {
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   lastLogin  DateTime? @map("last_login") @db.Timestamptz(6)
 
+  createdTickets   Ticket[]      @relation("CreatedTickets")
+  assignedTickets  Ticket[]      @relation("AssignedTickets")
+  ticketEvents     TicketEvent[]
+
   @@map("users")
 }
 
 enum UserRole {
-  ADMIN      // Acceso total al sistema
-  OPERATOR   // Puede ver y gestionar incidentes
-  VIEWER     // Solo lectura
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+}
+
+enum TicketEventType {
+  CREATED
+  COMMENT
+  STATUS_CHANGED
+  UPDATED
+  ASSIGNED
+  UNASSIGNED
+}
+
+model Ticket {
+  id                BigInt       @id @default(autoincrement())
+  incidentId        BigInt       @map("incident_id")
+  title             String
+  description       String?      @db.Text
+  status            TicketStatus @default(OPEN)
+  priority          Int?
+  createdByUserId   Int          @map("created_by_user_id")
+  assignedToUserId  Int?         @map("assigned_to_user_id")
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  incident          WazeIncident @relation(fields: [incidentId], references: [id], onDelete: Restrict)
+  createdBy         User         @relation("CreatedTickets", fields: [createdByUserId], references: [id])
+  assignedTo        User?        @relation("AssignedTickets", fields: [assignedToUserId], references: [id])
+  events            TicketEvent[]
+
+  @@index([incidentId])
+  @@index([status])
+  @@index([createdByUserId])
+  @@index([assignedToUserId])
+  @@map("tickets")
+}
+
+model TicketEvent {
+  id                BigInt          @id @default(autoincrement())
+  ticketId          BigInt          @map("ticket_id")
+  eventType         TicketEventType @map("event_type")
+  fromStatus        TicketStatus?   @map("from_status")
+  toStatus          TicketStatus?   @map("to_status")
+  message           String?         @db.Text
+  payload           Json?           @db.JsonB
+  createdByUserId   Int             @map("created_by_user_id")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ticket            Ticket          @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  createdBy         User            @relation(fields: [createdByUserId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_events")
 }
 
 model spatial_ref_sys {

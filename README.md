@@ -1,11 +1,12 @@
 # Alertas API
 
-API REST para gestión de incidentes viales basados en datos de Waze, con autenticación JWT y sistema de roles.
+API REST para gestión de incidentes viales basados en datos de Waze, con autenticación JWT, sistema de roles y **sistema de tickets integrado**.
 
 ## Características
 
 - **Autenticación JWT** con sistema de roles (Admin, Operator, Viewer)
 - **Gestión de usuarios** con diferentes niveles de acceso
+- **Sistema de Tickets** para seguimiento de incidentes con historial inmutable
 - **API REST completa** para consulta de incidentes viales
 - **Filtros avanzados** por tipo, categoría, ciudad, estado y rango de fechas
 - **Búsqueda geoespacial** de incidentes cercanos a una ubicación
@@ -15,9 +16,9 @@ API REST para gestión de incidentes viales basados en datos de Waze, con autent
 
 ## Roles de Usuario
 
-- **ADMIN**: Acceso total al sistema, puede gestionar usuarios
-- **OPERATOR**: Puede ver y gestionar incidentes
-- **VIEWER**: Solo lectura de incidentes
+- **ADMIN**: Acceso total al sistema, puede gestionar usuarios y tickets
+- **OPERATOR**: Puede ver y gestionar incidentes y tickets
+- **VIEWER**: Solo lectura de incidentes y tickets
 
 ## Requisitos
 
@@ -215,6 +216,28 @@ localStorage.setItem('token', data.access_token);
 3. En otras peticiones:
    - Authorization tab → Type: **Bearer Token**
    - Token: Pega el `access_token`
+
+## Sistema de Tickets
+
+El sistema incluye un módulo completo de tickets para seguimiento de incidentes. Ver documentación detallada en:
+
+[📋 TICKETING_SYSTEM.md](./TICKETING_SYSTEM.md)
+
+**Características principales:**
+- ✅ Crear tickets vinculados a incidentes
+- ✅ Estados: OPEN, IN_PROGRESS, DONE
+- ✅ Asignación de usuarios
+- ✅ Historial inmutable de todos los cambios
+- ✅ Comentarios y cambios de estado
+- ✅ Control de acceso por rol (ADMIN/OPERATOR)
+
+**Endpoints principales:**
+- `POST /api/v1/tickets` - Crear ticket
+- `GET /api/v1/tickets` - Listar tickets
+- `PATCH /api/v1/tickets/:id` - Actualizar ticket
+- `POST /api/v1/tickets/:id/status` - Cambiar estado
+- `POST /api/v1/tickets/:id/comments` - Agregar comentario
+- `GET /api/v1/tickets/:id/events` - Ver historial
 
 ## Tecnologías
 
