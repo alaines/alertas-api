@@ -2,14 +2,16 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { IncidentsModule } from './incidents/incidents.module';
-import { ApiKeyGuard } from './auth/api-key.guard';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
-  imports: [PrismaModule, IncidentsModule],
+  imports: [PrismaModule, IncidentsModule, AuthModule, UsersModule],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ApiKeyGuard,
+      useClass: JwtAuthGuard,
     },
   ],
 })

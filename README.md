@@ -1,15 +1,23 @@
 # Alertas API
 
-API REST para gestión de incidentes viales basados en datos de Waze, construida con NestJS, Prisma y PostgreSQL.
+API REST para gestión de incidentes viales basados en datos de Waze, con autenticación JWT y sistema de roles.
 
 ## Características
 
+- **Autenticación JWT** con sistema de roles (Admin, Operator, Viewer)
+- **Gestión de usuarios** con diferentes niveles de acceso
 - **API REST completa** para consulta de incidentes viales
 - **Filtros avanzados** por tipo, categoría, ciudad, estado y rango de fechas
 - **Búsqueda geoespacial** de incidentes cercanos a una ubicación
 - **Documentación interactiva** con Swagger/OpenAPI
 - **Base de datos PostgreSQL** con Prisma ORM
 - **TypeScript** para desarrollo type-safe
+
+## Roles de Usuario
+
+- **ADMIN**: Acceso total al sistema, puede gestionar usuarios
+- **OPERATOR**: Puede ver y gestionar incidentes
+- **VIEWER**: Solo lectura de incidentes
 
 ## Requisitos
 
@@ -35,24 +43,35 @@ npm install
 cp .env.example .env
 ```
 
-Edita el archivo `.env` con tus credenciales de PostgreSQL y API Keys:
+Edita el archivo `.env`:
 ```env
 DATABASE_URL="postgresql://usuario:password@localhost:5432/monitoreo_trafico?schema=public"
 PORT=80
-API_KEYS="key1,key2,key3"  # Genera keys con: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+JWT_SECRET="tu-secret-jwt-super-seguro"  # Genera uno con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
-
-Ver [SECURITY.md](SECURITY.md) para más detalles sobre cómo generar y usar las API Keys.
 
 4. **Generar el cliente de Prisma**
 ```bash
 npm run prisma:generate
 ```
 
-5. **Ejecutar migraciones** (si las tienes)
+5. **Crear las tablas en la base de datos**
 ```bash
-npx prisma migrate deploy
+# Si las tablas no existen, ejecutar el script SQL
+psql -h host -U usuario -d monitoreo_trafico -f prisma/migrations/create_users_table.sql
 ```
+
+6. **Crear usuario administrador inicial**
+```bash
+npm run seed:admin
+```
+
+Esto creará un usuario admin con las siguientes credenciales:
+- **Email**: `admin@alertas.com`
+- **Password**: `admin123`
+- **Role**: `ADMIN`
+
+⚠️ **IMPORTANTE**: Cambia la contraseña después del primer login!
 
 ## Ejecución
 
@@ -69,13 +88,6 @@ npm start
 
 La API estará disponible en `http://localhost:80/api/v1`
 
-**Nota:** Para ejecutar en el puerto 80 en Linux, necesitas privilegios de root o configurar capacidades:
-```bash
-sudo npm start
-# O configurar capacidades:
-sudo setcap 'cap_net_bind_service=+ep' $(which node)
-```
-
 ## Documentación
 
 Accede a la documentación interactiva de Swagger en:
@@ -83,138 +95,137 @@ Accede a la documentación interactiva de Swagger en:
 http://localhost/api/v1/docs
 ```
 
-**Autenticación:** Todos los endpoints requieren un header `x-api-key` con una API Key válida. Ver [SECURITY.md](SECURITY.md) para más información.
+## Autenticación
 
-## Endpoints principales
-
-### Listar incidentes
-```http
-GET /api/v1/incidents
-```
-
-**Parámetros opcionales:**
-- `type` - Tipo de incidente (ACCIDENT, JAM, WEATHERHAZARD, etc.)
-- `category` - Categoría del incidente
-- `status` - Estado (active, inactive)
-- `city` - Ciudad
-- `from` - Fecha inicio (ISO 8601)
-- `to` - Fecha fin (ISO 8601)
-- `limit` - Número máximo de resultados
-
-**Ejemplo:**
+### 1. Login
 ```bash
-curl "http://localhost/api/v1/incidents?type=ACCIDENT&status=active&limit=10"
+curl -X POST http://localhost/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@alertas.com",
+    "password": "admin123"
+  }'
 ```
 
-### Obtener incidente por ID
-```http
-GET /api/v1/incidents/:id
-```
-
-### Buscar incidentes cercanos
-```http
-GET /api/v1/incidents/near?lat=LATITUDE&lon=LONGITUDE&radius=METROS
-```
-
-**Parámetros:**
-- `lat` - Latitud (requerido)
-- `lon` - Longitud (requerido)
-- `radius` - Radio de búsqueda en metros (opcional, default: 5000)
-
-**Ejemplo:**
-```bash
-curl "http://localhost/api/v1/incidents/near?lat=-12.0464&lon=-77.0428&radius=3000"
-```
-
-### Estadísticas por tipo
-```http
-GET /api/v1/incidents/stats/by-type
-```
-
-### Estadísticas por ciudad
-```http
-GET /api/v1/incidents/stats/by-city
-```
-
-## Modelo de datos
-
-La API utiliza el siguiente esquema de base de datos:
-
-```prisma
-model WazeIncident {
-  id             BigInt   @id @default(autoincrement())
-  source         String   @default("waze")
-  uuid           String   @unique
-  type           String
-  subtype        String?
-  city           String?
-  street         String?
-  road_type      Int?
-  magvar         Int?
-  report_rating  Int?
-  report_by_muni Boolean
-  confidence     Int?
-  reliability    Int?
-  pub_millis     BigInt
-  pub_time       DateTime
-  category       String?
-  priority       Int?
-  status         String   @default("active")
-  created_at     DateTime @default(now())
-  updated_at     DateTime @default(now())
+Respuesta:
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "email": "admin@alertas.com",
+    "username": "admin",
+    "fullName": "Administrador del Sistema",
+    "role": "ADMIN"
+  }
 }
 ```
 
-## Scripts disponibles
+### 2. Usar el token en las peticiones
 
 ```bash
-# Desarrollo con hot-reload
-npm run start:dev
-
-# Compilar para producción
-npm run build
-
-# Iniciar en producción
-npm start
-
-# Generar cliente Prisma
-npm run prisma:generate
-
-# Linting
-npm run lint
+curl http://localhost/api/v1/incidents \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-## Estructura del proyecto
+## Endpoints Principales
 
+### Autenticación
+
+- **POST /api/v1/auth/register** - Registrar un nuevo usuario
+- **POST /api/v1/auth/login** - Iniciar sesión
+
+### Usuarios (Solo ADMIN)
+
+- **GET /api/v1/users** - Listar todos los usuarios
+- **GET /api/v1/users/:id** - Obtener un usuario por ID
+- **POST /api/v1/users** - Crear un nuevo usuario
+- **PATCH /api/v1/users/:id** - Actualizar un usuario
+- **DELETE /api/v1/users/:id** - Eliminar un usuario
+- **POST /api/v1/users/change-password** - Cambiar contraseña
+- **GET /api/v1/users/me/profile** - Obtener perfil actual
+
+### Incidentes
+
+- **GET /api/v1/incidents** - Listar incidentes con filtros
+- **GET /api/v1/incidents/:id** - Obtener incidente por ID
+- **GET /api/v1/incidents/near** - Buscar incidentes cercanos
+- **GET /api/v1/incidents/stats/by-type** - Estadísticas por tipo
+- **GET /api/v1/incidents/stats/by-city** - Estadísticas por ciudad
+
+Ver documentación completa en Swagger: `http://localhost/api/v1/docs`
+
+## Uso desde el Frontend
+
+### JavaScript / Fetch
+
+```javascript
+// 1. Login
+const response = await fetch('http://localhost/api/v1/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'admin@alertas.com',
+    password: 'admin123'
+  })
+});
+
+const { access_token } = await response.json();
+localStorage.setItem('token', access_token);
+
+// 2. Usar en peticiones
+const incidents = await fetch('http://localhost/api/v1/incidents', {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  }
+});
 ```
-alertas-api/
-├── prisma/
-│   └── schema.prisma       # Esquema de base de datos
-├── src/
-│   ├── incidents/          # Módulo de incidentes
-│   │   ├── dto/
-│   │   ├── incidents.controller.ts
-│   │   ├── incidents.service.ts
-│   │   └── incidents.module.ts
-│   ├── prisma/             # Módulo de Prisma
-│   │   ├── prisma.service.ts
-│   │   └── prisma.module.ts
-│   ├── app.module.ts       # Módulo principal
-│   └── main.ts             # Punto de entrada
-├── .env.example            # Variables de entorno de ejemplo
-├── nest-cli.json           # Configuración de NestJS
-├── package.json
-├── tsconfig.json
-└── README.md
+
+### Axios
+
+```javascript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost/api/v1'
+});
+
+// Interceptor para agregar token
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Login
+const { data } = await api.post('/auth/login', {
+  email: 'admin@alertas.com',
+  password: 'admin123'
+});
+
+localStorage.setItem('token', data.access_token);
 ```
+
+## Uso en Postman
+
+1. **Login** - POST `http://localhost/api/v1/auth/login`
+2. Copia el `access_token` de la respuesta
+3. En otras peticiones:
+   - Authorization tab → Type: **Bearer Token**
+   - Token: Pega el `access_token`
 
 ## Tecnologías
 
-- **[NestJS](https://nestjs.com/)** - Framework de Node.js progresivo
-- **[Prisma](https://www.prisma.io/)** - ORM de próxima generación
-- **[PostgreSQL](https://www.postgresql.org/)** - Base de datos relacional
-- **[Swagger](https://swagger.io/)** - Documentación de API
-- **[TypeScript](https://www.typescriptlang.org/)** - JavaScript tipado
+- **NestJS** - Framework de Node.js
+- **Prisma** - ORM
+- **PostgreSQL** - Base de datos
+- **JWT** - Autenticación
+- **Passport** - Middleware de autenticación
+- **Bcrypt** - Hashing de contraseñas
+- **Swagger** - Documentación
+- **TypeScript** - Lenguaje
 
 ## Licencia
 

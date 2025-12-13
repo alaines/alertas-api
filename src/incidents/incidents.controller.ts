@@ -7,12 +7,12 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { IncidentsService } from './incidents.service';
 import { IncidentDto } from './dto/incident.dto';
 
 @ApiTags('incidents')
-@ApiSecurity('api-key')
+@ApiBearerAuth()
 @Controller('incidents')
 export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}

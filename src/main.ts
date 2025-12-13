@@ -21,14 +21,14 @@ async function bootstrap() {
     .setTitle('Alertas API')
     .setDescription('API de incidentes viales basados en Waze')
     .setVersion('1.0.0')
-    .addApiKey(
+    .addBearerAuth(
       {
-        type: 'apiKey',
-        name: 'x-api-key',
-        in: 'header',
-        description: 'API Key para autenticación',
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Ingresa tu token JWT',
       },
-      'api-key',
+      'bearer',
     )
     .build();
 
