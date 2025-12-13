@@ -21,6 +21,15 @@ async function bootstrap() {
     .setTitle('Alertas API')
     .setDescription('API de incidentes viales basados en Waze')
     .setVersion('1.0.0')
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-api-key',
+        in: 'header',
+        description: 'API Key para autenticación',
+      },
+      'api-key',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

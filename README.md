@@ -35,10 +35,14 @@ npm install
 cp .env.example .env
 ```
 
-Edita el archivo `.env` con tus credenciales de PostgreSQL:
+Edita el archivo `.env` con tus credenciales de PostgreSQL y API Keys:
 ```env
 DATABASE_URL="postgresql://usuario:password@localhost:5432/monitoreo_trafico?schema=public"
+PORT=80
+API_KEYS="key1,key2,key3"  # Genera keys con: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+Ver [SECURITY.md](SECURITY.md) para más detalles sobre cómo generar y usar las API Keys.
 
 4. **Generar el cliente de Prisma**
 ```bash
@@ -78,6 +82,8 @@ Accede a la documentación interactiva de Swagger en:
 ```
 http://localhost/api/v1/docs
 ```
+
+**Autenticación:** Todos los endpoints requieren un header `x-api-key` con una API Key válida. Ver [SECURITY.md](SECURITY.md) para más información.
 
 ## Endpoints principales
 
