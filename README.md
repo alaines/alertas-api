@@ -1,8 +1,8 @@
-# Alertas API 🚦
+# Alertas API
 
 API REST para gestión de incidentes viales basados en datos de Waze, construida con NestJS, Prisma y PostgreSQL.
 
-## 🚀 Características
+## Características
 
 - **API REST completa** para consulta de incidentes viales
 - **Filtros avanzados** por tipo, categoría, ciudad, estado y rango de fechas
@@ -11,13 +11,13 @@ API REST para gestión de incidentes viales basados en datos de Waze, construida
 - **Base de datos PostgreSQL** con Prisma ORM
 - **TypeScript** para desarrollo type-safe
 
-## 📋 Requisitos
+## Requisitos
 
 - Node.js 18+ 
 - PostgreSQL 13+
 - npm o yarn
 
-## 🛠️ Instalación
+## Instalación
 
 1. **Clonar el repositorio**
 ```bash
@@ -50,7 +50,7 @@ npm run prisma:generate
 npx prisma migrate deploy
 ```
 
-## 🏃 Ejecución
+## Ejecución
 
 ### Modo desarrollo
 ```bash
@@ -65,14 +65,14 @@ npm start
 
 La API estará disponible en `http://localhost:3000`
 
-## 📚 Documentación
+## Documentación
 
 Accede a la documentación interactiva de Swagger en:
 ```
 http://localhost:3000/docs
 ```
 
-## 🔌 Endpoints principales
+## Endpoints principales
 
 ### Listar incidentes
 ```http
@@ -123,7 +123,7 @@ GET /incidents/stats/by-type
 GET /incidents/stats/by-city
 ```
 
-## 🗄️ Modelo de datos
+## Modelo de datos
 
 La API utiliza el siguiente esquema de base de datos:
 
@@ -152,7 +152,7 @@ model WazeIncident {
 }
 ```
 
-## 🧪 Scripts disponibles
+## Scripts disponibles
 
 ```bash
 # Desarrollo con hot-reload
@@ -171,7 +171,7 @@ npm run prisma:generate
 npm run lint
 ```
 
-## 🏗️ Estructura del proyecto
+## Estructura del proyecto
 
 ```
 alertas-api/
@@ -195,7 +195,7 @@ alertas-api/
 └── README.md
 ```
 
-## 🔧 Tecnologías
+## Tecnologías
 
 - **[NestJS](https://nestjs.com/)** - Framework de Node.js progresivo
 - **[Prisma](https://www.prisma.io/)** - ORM de próxima generación
@@ -203,15 +203,15 @@ alertas-api/
 - **[Swagger](https://swagger.io/)** - Documentación de API
 - **[TypeScript](https://www.typescriptlang.org/)** - JavaScript tipado
 
-## 📝 Licencia
+## Licencia
 
 MIT
 
-## 👤 Autor
+## Autor
 
-**alaines**
+**Aland Laines Calonge**
 - GitHub: [@alaines](https://github.com/alaines)
 
 ---
 
-⭐ Si este proyecto te ha sido útil, considera darle una estrella en GitHub
+Si este proyecto te ha sido útil, considera darle una estrella en GitHub
