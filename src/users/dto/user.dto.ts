@@ -4,21 +4,21 @@ import { IsEmail, IsString, IsOptional, IsEnum, IsBoolean, MinLength } from 'cla
 export class CreateUserDto {
   @ApiProperty({ example: 'user@alertas.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'username' })
   @IsString()
   @MinLength(3)
-  username: string;
+  username!: string;
 
   @ApiProperty({ example: 'password123' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @ApiProperty({ example: 'Juan Pérez' })
   @IsString()
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty({ example: 'VIEWER', enum: ['ADMIN', 'OPERATOR', 'VIEWER'] })
   @IsEnum(['ADMIN', 'OPERATOR', 'VIEWER'])
@@ -57,36 +57,36 @@ export class ChangePasswordDto {
   @ApiProperty({ example: 'oldPassword123' })
   @IsString()
   @MinLength(6)
-  currentPassword: string;
+  currentPassword!: string;
 
   @ApiProperty({ example: 'newPassword456' })
   @IsString()
   @MinLength(6)
-  newPassword: string;
+  newPassword!: string;
 }
 
 export class UserResponseDto {
   @ApiProperty()
-  id: number;
+  id!: number;
 
   @ApiProperty()
-  email: string;
+  email!: string;
 
   @ApiProperty()
-  username: string;
+  username!: string;
 
   @ApiProperty()
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty()
-  role: string;
+  role!: string;
 
   @ApiProperty()
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty()
-  lastLogin: Date | null;
+  lastLogin!: Date | null;
 }

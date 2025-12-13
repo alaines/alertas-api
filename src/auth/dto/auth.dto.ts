@@ -4,40 +4,40 @@ import { IsEmail, IsString, MinLength } from 'class-validator';
 export class LoginDto {
   @ApiProperty({ example: 'admin@alertas.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'password123' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 }
 
 export class RegisterDto {
   @ApiProperty({ example: 'admin@alertas.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'admin' })
   @IsString()
   @MinLength(3)
-  username: string;
+  username!: string;
 
   @ApiProperty({ example: 'password123' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @ApiProperty({ example: 'Aland Laines Calonge' })
   @IsString()
-  fullName: string;
+  fullName!: string;
 }
 
 export class AuthResponseDto {
   @ApiProperty()
-  access_token: string;
+  access_token!: string;
 
   @ApiProperty()
-  user: {
+  user!: {
     id: number;
     email: string;
     username: string;

@@ -35,7 +35,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/v1/docs', app, document);
 
-  const port = process.env.PORT || 80;
+  const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`Alertas API corriendo en http://localhost:${port}/api/v1 (Swagger: /api/v1/docs)`);
 }

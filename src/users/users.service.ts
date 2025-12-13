@@ -48,7 +48,7 @@ export class UsersService {
       data: {
         ...createUserDto,
         password: hashedPassword,
-        role: createUserDto.role || 'VIEWER',
+        role: (createUserDto.role as any) || 'VIEWER',
       },
     });
 
@@ -85,7 +85,7 @@ export class UsersService {
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data: updateUserDto as any,
     });
 
     const { password, ...userWithoutPassword } = updatedUser;
