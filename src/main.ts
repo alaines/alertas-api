@@ -7,6 +7,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Configurar prefijo global para la API
+  app.setGlobalPrefix('api/v1');
+
   const config = new DocumentBuilder()
     .setTitle('Alertas API')
     .setDescription('API de incidentes viales basados en Waze')
@@ -14,9 +17,10 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/v1/docs', app, document);
 
-  await app.listen(3000);
-  console.log(`Alertas API corriendo en http://localhost:3000 (Swagger: /docs)`);
+  const port = process.env.PORT || 80;
+  await app.listen(port);
+  console.log(`Alertas API corriendo en http://localhost:${port}/api/v1 (Swagger: /api/v1/docs)`);
 }
 bootstrap();

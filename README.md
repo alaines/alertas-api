@@ -63,20 +63,27 @@ npm run build
 npm start
 ```
 
-La API estará disponible en `http://localhost:3000`
+La API estará disponible en `http://localhost:80/api/v1`
+
+**Nota:** Para ejecutar en el puerto 80 en Linux, necesitas privilegios de root o configurar capacidades:
+```bash
+sudo npm start
+# O configurar capacidades:
+sudo setcap 'cap_net_bind_service=+ep' $(which node)
+```
 
 ## Documentación
 
 Accede a la documentación interactiva de Swagger en:
 ```
-http://localhost:3000/docs
+http://localhost/api/v1/docs
 ```
 
 ## Endpoints principales
 
 ### Listar incidentes
 ```http
-GET /incidents
+GET /api/v1/incidents
 ```
 
 **Parámetros opcionales:**
@@ -90,17 +97,17 @@ GET /incidents
 
 **Ejemplo:**
 ```bash
-curl "http://localhost:3000/incidents?type=ACCIDENT&status=active&limit=10"
+curl "http://localhost/api/v1/incidents?type=ACCIDENT&status=active&limit=10"
 ```
 
 ### Obtener incidente por ID
 ```http
-GET /incidents/:id
+GET /api/v1/incidents/:id
 ```
 
 ### Buscar incidentes cercanos
 ```http
-GET /incidents/near?lat=LATITUDE&lon=LONGITUDE&radius=METROS
+GET /api/v1/incidents/near?lat=LATITUDE&lon=LONGITUDE&radius=METROS
 ```
 
 **Parámetros:**
@@ -110,17 +117,17 @@ GET /incidents/near?lat=LATITUDE&lon=LONGITUDE&radius=METROS
 
 **Ejemplo:**
 ```bash
-curl "http://localhost:3000/incidents/near?lat=-12.0464&lon=-77.0428&radius=3000"
+curl "http://localhost/api/v1/incidents/near?lat=-12.0464&lon=-77.0428&radius=3000"
 ```
 
 ### Estadísticas por tipo
 ```http
-GET /incidents/stats/by-type
+GET /api/v1/incidents/stats/by-type
 ```
 
 ### Estadísticas por ciudad
 ```http
-GET /incidents/stats/by-city
+GET /api/v1/incidents/stats/by-city
 ```
 
 ## Modelo de datos
