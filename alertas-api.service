@@ -1,0 +1,54 @@
+# Servicio systemd para Alertas API
+# Ubicación: /etc/systemd/system/alertas-api.service
+#
+# Para instalar:
+#   sudo cp alertas-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable alertas-api
+#   sudo systemctl start alertas-api
+#
+# Comandos útiles:
+#   sudo systemctl status alertas-api
+#   sudo systemctl restart alertas-api
+#   sudo systemctl stop alertas-api
+#   sudo journalctl -u alertas-api -f
+
+[Unit]
+Description=Alertas API - Sistema de gestión de incidentes viales
+Documentation=https://github.com/alaines/alertas-api
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=alertas
+Group=alertas
+WorkingDirectory=/opt/alertas-api
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/alertas-api/.env
+
+# Comando para iniciar la aplicación
+ExecStart=/usr/bin/node dist/main.js
+
+# Reiniciar automáticamente si falla
+Restart=always
+RestartSec=10
+
+# Límites de recursos
+LimitNOFILE=65536
+MemoryLimit=1G
+
+# Logs
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alertas-api
+
+# Seguridad
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/alertas-api/logs /tmp
+
+[Install]
+WantedBy=multi-user.target

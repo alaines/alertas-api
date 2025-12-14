@@ -116,6 +116,32 @@ export class IncidentsService {
     return rows[0];
   }
 
+  async findByUuid(uuid: string): Promise<IncidentDto | null> {
+    const query = `
+      SELECT
+        id::int AS id,
+        uuid,
+        type,
+        subtype,
+        city,
+        street,
+        category,
+        priority,
+        status,
+        pub_time,
+        reliability,
+        confidence,
+        ST_Y(geom::geometry) AS lat,
+        ST_X(geom::geometry) AS lon
+      FROM waze_incidents
+      WHERE uuid = $1;
+    `;
+
+    const rows = await this.prisma.$queryRawUnsafe<IncidentDto[]>(query, uuid);
+    if (!rows.length) return null;
+    return rows[0];
+  }
+
   async findNear(params: FindNearParams): Promise<IncidentDto[]> {
     const { lat, lon, radius } = params;
 

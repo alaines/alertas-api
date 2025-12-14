@@ -28,8 +28,6 @@ model WazeIncident {
   status         String   @default("active")
   created_at     DateTime @db.Timestamptz(6) @default(now())
   updated_at     DateTime @db.Timestamptz(6) @default(now())
-  
-  tickets        Ticket[]
 
   @@map("waze_incidents")
 }
@@ -49,6 +47,8 @@ model User {
   createdTickets   Ticket[]      @relation("CreatedTickets")
   assignedTickets  Ticket[]      @relation("AssignedTickets")
   ticketEvents     TicketEvent[]
+  devices          Device[]
+  deviceEvents     DeviceEvent[]
 
   @@map("users")
 }
@@ -74,25 +74,37 @@ enum TicketEventType {
   UNASSIGNED
 }
 
-model Ticket {
-  id                BigInt       @id @default(autoincrement())
-  incidentId        BigInt       @map("incident_id")
-  title             String
-  description       String?      @db.Text
-  status            TicketStatus @default(OPEN)
-  priority          Int?
-  createdByUserId   Int          @map("created_by_user_id")
-  assignedToUserId  Int?         @map("assigned_to_user_id")
-  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+enum TicketSource {
+  WAZE
+  PHONE_CALL
+  WHATSAPP
+  INSPECTORS
+  OTHER
+}
 
-  incident          WazeIncident @relation(fields: [incidentId], references: [id], onDelete: Restrict)
-  createdBy         User         @relation("CreatedTickets", fields: [createdByUserId], references: [id])
-  assignedTo        User?        @relation("AssignedTickets", fields: [assignedToUserId], references: [id])
+model Ticket {
+  id                BigInt        @id @default(autoincrement())
+  incidentId        BigInt?       @map("incident_id")
+  incidentUuid      String?       @map("incident_uuid") @db.Uuid
+  source            TicketSource  @default(OTHER)
+  incidentType      String?       @map("incident_type")
+  title             String
+  description       String?       @db.Text
+  status            TicketStatus  @default(OPEN)
+  priority          Int?
+  createdByUserId   Int           @map("created_by_user_id")
+  assignedToUserId  Int?          @map("assigned_to_user_id")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  createdBy         User          @relation("CreatedTickets", fields: [createdByUserId], references: [id])
+  assignedTo        User?         @relation("AssignedTickets", fields: [assignedToUserId], references: [id])
   events            TicketEvent[]
 
   @@index([incidentId])
+  @@index([incidentUuid])
   @@index([status])
+  @@index([source])
   @@index([createdByUserId])
   @@index([assignedToUserId])
   @@map("tickets")
@@ -114,6 +126,79 @@ model TicketEvent {
 
   @@index([ticketId, createdAt])
   @@map("ticket_events")
+}
+
+enum DeviceType {
+  CAMERA
+  TRAFFIC_LIGHT
+  SENSOR
+  COUNTING_CAMERA
+  OTHER
+}
+
+enum DeviceStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  DAMAGED
+}
+
+model Device {
+  id                    BigInt        @id @default(autoincrement())
+  name                  String
+  type                  DeviceType
+  brand                 String?
+  model                 String?
+  serialNumber          String?       @unique @map("serial_number")
+  installationYear      Int?          @map("installation_year")
+  manufactureYear       Int?          @map("manufacture_year")
+  latitude              Float?        @map("lat")
+  longitude             Float?        @map("lon")
+  address               String?
+  ipAddress             String?       @map("ip_address")
+  username              String?
+  password              String?
+  status                DeviceStatus  @default(ACTIVE)
+  lastMaintenanceDate   DateTime?     @map("last_maintenance_date") @db.Timestamptz(6)
+  notes                 String?       @db.Text
+  createdByUserId       Int           @map("created_by_user_id")
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  createdBy             User          @relation(fields: [createdByUserId], references: [id])
+  events                DeviceEvent[]
+
+  @@index([type])
+  @@index([status])
+  @@index([createdByUserId])
+  @@map("devices")
+}
+
+enum DeviceEventType {
+  CREATED
+  UPDATED
+  STATUS_CHANGED
+  MAINTENANCE
+  REPAIR
+  CONFIGURATION_CHANGED
+}
+
+model DeviceEvent {
+  id                BigInt            @id @default(autoincrement())
+  deviceId          BigInt            @map("device_id")
+  eventType         DeviceEventType   @map("event_type")
+  fromStatus        DeviceStatus?     @map("from_status")
+  toStatus          DeviceStatus?     @map("to_status")
+  description       String?           @db.Text
+  payload           Json?             @db.JsonB
+  createdByUserId   Int               @map("created_by_user_id")
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  device            Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdBy         User              @relation(fields: [createdByUserId], references: [id])
+
+  @@index([deviceId, createdAt])
+  @@map("device_events")
 }
 
 model spatial_ref_sys {

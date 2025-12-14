@@ -1,7 +1,7 @@
 {
   "name": "alertas-api",
-  "version": "1.0.0",
-  "description": "API de alertas viales basada en Waze + NestJS + Prisma",
+  "version": "1.1.0",
+  "description": "API REST para gestión de incidentes viales, tickets y periféricos urbanos",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",

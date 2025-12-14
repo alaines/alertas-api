@@ -43,3 +43,16 @@ lerna-debug.log*
 
 # Prisma
 prisma/migrations/*/migration.sql
+
+# Backups
+/backups
+*.sql
+*.sql.gz
+
+# Temporary files
+/tmp
+*.tmp
+*.bak
+*.backup
+README.md.backup
+

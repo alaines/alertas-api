@@ -53,7 +53,7 @@ export class TicketsController {
     @Body() createTicketDto: CreateTicketDto,
     @CurrentUser() user: any,
   ): Promise<TicketDto> {
-    return this.ticketsService.create(createTicketDto, user.sub);
+    return this.ticketsService.create(createTicketDto, user.id);
   }
 
   @Get()
@@ -111,7 +111,7 @@ export class TicketsController {
     @Body() updateTicketDto: UpdateTicketDto,
     @CurrentUser() user: any,
   ): Promise<TicketDto> {
-    return this.ticketsService.update(id, updateTicketDto, user.sub);
+    return this.ticketsService.update(id, updateTicketDto, user.id);
   }
 
   @Post(':id/status')
@@ -130,7 +130,7 @@ export class TicketsController {
     @Body() changeStatusDto: ChangeTicketStatusDto,
     @CurrentUser() user: any,
   ): Promise<TicketDto> {
-    return this.ticketsService.changeStatus(id, changeStatusDto, user.sub);
+    return this.ticketsService.changeStatus(id, changeStatusDto, user.id);
   }
 
   @Post(':id/comments')
@@ -148,7 +148,7 @@ export class TicketsController {
     @Body() addCommentDto: AddCommentDto,
     @CurrentUser() user: any,
   ): Promise<TicketEventDto> {
-    return this.ticketsService.addComment(id, addCommentDto, user.sub);
+    return this.ticketsService.addComment(id, addCommentDto, user.id);
   }
 
   @Get(':id/events')

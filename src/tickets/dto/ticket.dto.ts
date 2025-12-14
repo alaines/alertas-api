@@ -1,12 +1,31 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsInt, IsEnum, Min, Max } from 'class-validator';
-import { TicketStatus } from '@prisma/client';
+import { TicketStatus, TicketSource } from '@prisma/client';
 
 export class CreateTicketDto {
-  @ApiProperty({ description: 'ID del incidente relacionado', example: 123 })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ description: 'UUID del incidente de Waze (obligatorio si source es WAZE)', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @IsOptional()
+  @IsString()
+  incidentUuid?: string;
+
+  @ApiPropertyOptional({ description: 'ID del incidente (deprecated, usar incidentUuid)', example: 857487, deprecated: true })
+  @IsOptional()
   @IsInt()
-  incidentId!: number;
+  incidentId?: number;
+
+  @ApiProperty({ 
+    enum: TicketSource, 
+    description: 'Fuente del ticket',
+    example: 'WAZE',
+    default: 'OTHER'
+  })
+  @IsEnum(TicketSource)
+  source!: TicketSource;
+
+  @ApiPropertyOptional({ description: 'Tipo de incidente', example: 'ACCIDENT' })
+  @IsOptional()
+  @IsString()
+  incidentType?: string;
 
   @ApiProperty({ description: 'Título del ticket', example: 'Revisar incidente en Av. Principal' })
   @IsNotEmpty()
@@ -137,8 +156,17 @@ export class TicketDto {
   @ApiProperty()
   id!: string;
 
-  @ApiProperty()
-  incidentId!: string;
+  @ApiPropertyOptional({ description: 'UUID del incidente de Waze' })
+  incidentUuid?: string;
+
+  @ApiPropertyOptional({ description: 'ID del incidente (deprecated)' })
+  incidentId?: string;
+
+  @ApiProperty({ enum: TicketSource })
+  source!: TicketSource;
+
+  @ApiPropertyOptional()
+  incidentType?: string;
 
   @ApiProperty()
   title!: string;

@@ -1,20 +1,64 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTicketDto, UpdateTicketDto, ChangeTicketStatusDto, AddCommentDto, TicketDto, TicketEventDto } from './dto/ticket.dto';
-import { TicketStatus, TicketEventType } from '@prisma/client';
+import { TicketStatus, TicketEventType, TicketSource } from '@prisma/client';
 
 @Injectable()
 export class TicketsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createTicketDto: CreateTicketDto, userId: number): Promise<TicketDto> {
-    // Verificar que el incidente existe
+  // Helper para cargar incidente si existe (preferir UUID sobre ID)
+  private async loadIncidentIfExists(incidentUuid: string | null, incidentId: bigint | null = null) {
+    if (!incidentUuid && !incidentId) return null;
+    
     const incident = await this.prisma.wazeIncident.findUnique({
-      where: { id: BigInt(createTicketDto.incidentId) },
+      where: incidentUuid ? { uuid: incidentUuid } : { id: incidentId! },
     });
 
-    if (!incident) {
-      throw new NotFoundException(`Incidente con ID ${createTicketDto.incidentId} no encontrado`);
+    if (!incident) return null;
+
+    return {
+      id: incident.id.toString(),
+      uuid: incident.uuid,
+      type: incident.type,
+      category: incident.category ?? undefined,
+      city: incident.city ?? undefined,
+      street: incident.street ?? undefined,
+      status: incident.status,
+    };
+  }
+
+  async create(createTicketDto: CreateTicketDto, userId: number): Promise<TicketDto> {
+    // Validar que si la fuente es WAZE, debe tener incidentUuid o incidentId
+    if (createTicketDto.source === TicketSource.WAZE && !createTicketDto.incidentUuid && !createTicketDto.incidentId) {
+      throw new BadRequestException('incidentUuid es obligatorio cuando la fuente es WAZE');
+    }
+
+    // Si se proporciona incidentId pero no incidentUuid, buscar el UUID
+    let incidentUuid = createTicketDto.incidentUuid;
+    let incidentId = createTicketDto.incidentId ? BigInt(createTicketDto.incidentId) : null;
+
+    if (createTicketDto.source === TicketSource.WAZE) {
+      if (createTicketDto.incidentId && !incidentUuid) {
+        // Buscar UUID por ID (para compatibilidad con código antiguo)
+        const incident = await this.prisma.wazeIncident.findUnique({
+          where: { id: BigInt(createTicketDto.incidentId) },
+          select: { uuid: true, id: true },
+        });
+        if (incident) {
+          incidentUuid = incident.uuid;
+          incidentId = incident.id;
+        }
+      } else if (incidentUuid && !createTicketDto.incidentId) {
+        // Buscar ID por UUID (preferido)
+        const incident = await this.prisma.wazeIncident.findUnique({
+          where: { uuid: incidentUuid },
+          select: { uuid: true, id: true },
+        });
+        if (incident) {
+          incidentId = incident.id;
+        }
+      }
     }
 
     // Verificar usuario asignado si se proporciona
@@ -32,7 +76,10 @@ export class TicketsService {
     const result = await this.prisma.$transaction(async (tx) => {
       const ticket = await tx.ticket.create({
         data: {
-          incidentId: BigInt(createTicketDto.incidentId),
+          incidentId: incidentId,
+          incidentUuid: incidentUuid,
+          source: createTicketDto.source,
+          incidentType: createTicketDto.incidentType,
           title: createTicketDto.title,
           description: createTicketDto.description,
           priority: createTicketDto.priority,
@@ -41,7 +88,6 @@ export class TicketsService {
           status: TicketStatus.OPEN,
         },
         include: {
-          incident: true,
           createdBy: {
             select: {
               id: true,
@@ -92,6 +138,7 @@ export class TicketsService {
 
   async findAll(filters: {
     status?: TicketStatus;
+    source?: TicketSource;
     incidentId?: number;
     assignedToUserId?: number;
     createdByUserId?: number;
@@ -101,6 +148,10 @@ export class TicketsService {
 
     if (filters.status) {
       where.status = filters.status;
+    }
+
+    if (filters.source) {
+      where.source = filters.source;
     }
 
     if (filters.incidentId) {
@@ -122,7 +173,6 @@ export class TicketsService {
         createdAt: 'desc',
       },
       include: {
-        incident: true,
         createdBy: {
           select: {
             id: true,
@@ -140,14 +190,19 @@ export class TicketsService {
       },
     });
 
-    return tickets.map(ticket => this.mapTicketToDto(ticket));
+    return Promise.all(tickets.map(async (ticket) => {
+      const dto = this.mapTicketToDto(ticket);
+      if (ticket.incidentUuid || ticket.incidentId) {
+        dto.incident = await this.loadIncidentIfExists(ticket.incidentUuid, ticket.incidentId) || undefined;
+      }
+      return dto;
+    }));
   }
 
   async findOne(id: number): Promise<TicketDto> {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id: BigInt(id) },
       include: {
-        incident: true,
         createdBy: {
           select: {
             id: true,
@@ -184,7 +239,11 @@ export class TicketsService {
       throw new NotFoundException(`Ticket con ID ${id} no encontrado`);
     }
 
-    return this.mapTicketToDto(ticket);
+    const dto = this.mapTicketToDto(ticket);
+    if (ticket.incidentUuid || ticket.incidentId) {
+      dto.incident = await this.loadIncidentIfExists(ticket.incidentUuid, ticket.incidentId) || undefined;
+    }
+    return dto;
   }
 
   async update(id: number, updateTicketDto: UpdateTicketDto, userId: number): Promise<TicketDto> {
@@ -226,7 +285,6 @@ export class TicketsService {
         where: { id: BigInt(id) },
         data: updateTicketDto as any,
         include: {
-          incident: true,
           createdBy: {
             select: {
               id: true,
@@ -279,7 +337,11 @@ export class TicketsService {
       return updatedTicket;
     });
 
-    return this.mapTicketToDto(result);
+    const dto = this.mapTicketToDto(result);
+    if (result.incidentUuid || result.incidentId) {
+      dto.incident = await this.loadIncidentIfExists(result.incidentUuid, result.incidentId) || undefined;
+    }
+    return dto;
   }
 
   async changeStatus(id: number, changeStatusDto: ChangeTicketStatusDto, userId: number): Promise<TicketDto> {
@@ -300,7 +362,6 @@ export class TicketsService {
         where: { id: BigInt(id) },
         data: { status: changeStatusDto.status },
         include: {
-          incident: true,
           createdBy: {
             select: {
               id: true,
@@ -332,7 +393,11 @@ export class TicketsService {
       return updatedTicket;
     });
 
-    return this.mapTicketToDto(result);
+    const dto = this.mapTicketToDto(result);
+    if (result.incidentUuid || result.incidentId) {
+      dto.incident = await this.loadIncidentIfExists(result.incidentUuid, result.incidentId) || undefined;
+    }
+    return dto;
   }
 
   async addComment(id: number, addCommentDto: AddCommentDto, userId: number): Promise<TicketEventDto> {
@@ -391,13 +456,16 @@ export class TicketsService {
       },
     });
 
-    return events.map(event => this.mapEventToDto(event));
+    return events.map((event: any) => this.mapEventToDto(event));
   }
 
   private mapTicketToDto(ticket: any): TicketDto {
     return {
       id: ticket.id.toString(),
-      incidentId: ticket.incidentId.toString(),
+      incidentUuid: ticket.incidentUuid,
+      incidentId: ticket.incidentId ? ticket.incidentId.toString() : undefined,
+      source: ticket.source,
+      incidentType: ticket.incidentType,
       title: ticket.title,
       description: ticket.description,
       status: ticket.status,
@@ -406,15 +474,6 @@ export class TicketsService {
       assignedToUserId: ticket.assignedToUserId,
       createdAt: ticket.createdAt,
       updatedAt: ticket.updatedAt,
-      incident: ticket.incident ? {
-        id: ticket.incident.id.toString(),
-        uuid: ticket.incident.uuid,
-        type: ticket.incident.type,
-        category: ticket.incident.category,
-        city: ticket.incident.city,
-        street: ticket.incident.street,
-        status: ticket.incident.status,
-      } : undefined,
       createdBy: ticket.createdBy,
       assignedTo: ticket.assignedTo,
       recentEvents: ticket.events?.map((e: any) => this.mapEventToDto(e)),

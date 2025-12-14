@@ -91,6 +91,18 @@ export class IncidentsController {
     });
   }
 
+  @Get('uuid/:uuid')
+  @ApiOkResponse({ type: IncidentDto })
+  async findByUuid(
+    @Param('uuid') uuid: string,
+  ): Promise<IncidentDto> {
+    const incident = await this.incidentsService.findByUuid(uuid);
+    if (!incident) {
+      throw new NotFoundException('Incident not found');
+    }
+    return incident;
+  }
+
   @Get(':id')
   @ApiOkResponse({ type: IncidentDto })
   async findOne(

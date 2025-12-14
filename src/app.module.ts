@@ -5,10 +5,18 @@ import { IncidentsModule } from './incidents/incidents.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { DevicesModule } from './devices/devices.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
-  imports: [PrismaModule, IncidentsModule, AuthModule, UsersModule, TicketsModule],
+  imports: [
+    PrismaModule, 
+    IncidentsModule, 
+    AuthModule, 
+    UsersModule, 
+    TicketsModule,
+    DevicesModule,
+  ],
   providers: [
     {
       provide: APP_GUARD,
